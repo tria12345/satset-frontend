@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Settings } from 'lucide-react';
 import './App.css';
+import Auth from './Auth';
 
 function App() {
   const [settings, setSettings] = useState(null);
@@ -23,9 +24,28 @@ function App() {
   // Filter state (0: Hari ini, 1: 7 Hari, 2: Bulan ini, 3: Semua)
   const [tab, setTab] = useState(0);
 
+  const [token, setToken] = useState(localStorage.getItem('satset_token') || null);
+
   useEffect(() => {
-    fetchData();
-  }, []);
+    if (token) {
+      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      fetchData();
+    } else {
+      delete axios.defaults.headers.common['Authorization'];
+    }
+  }, [token]);
+
+  const handleLogin = (newToken) => {
+    localStorage.setItem('satset_token', newToken);
+    setToken(newToken);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('satset_token');
+    setToken(null);
+    setSettings(null);
+    setOrders([]);
+  };
 
   const fetchData = async () => {
     try {
@@ -38,6 +58,9 @@ function App() {
       setOrders(resOrd.data.orders);
     } catch (err) {
       console.error(err);
+      if (err.response?.status === 401 || err.response?.status === 403) {
+        handleLogout();
+      }
     }
   };
 
@@ -121,13 +144,22 @@ function App() {
 
   const chartData = [10, 30, 20, 50, 40, 80, 60]; // Dummy chart for UI representation matching the screenshot
 
+  if (!token) {
+    return <Auth onLogin={handleLogin} />;
+  }
+
   return (
     <div className="app-container">
       {/* Header / Target Card */}
       <div className="card dashboard-header" style={{ position: 'relative' }}>
-        <button onClick={() => setShowSettings(true)} style={{ position: 'absolute', top: 16, right: 16, background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}>
-          <Settings size={24} />
-        </button>
+        <div style={{ position: 'absolute', top: 16, right: 16, display: 'flex', gap: 12, alignItems: 'center' }}>
+          <button onClick={() => setShowSettings(true)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+            <Settings size={24} />
+          </button>
+          <button onClick={handleLogout} style={{ background: 'none', border: 'none', color: '#ff4d4f', cursor: 'pointer', fontSize: 14, fontWeight: 600 }}>
+            Logout
+          </button>
+        </div>
         <div className="progress-circle" style={{ borderColor: progressPct > 0 ? 'var(--primary-color)' : 'var(--border-color)' }}>
           {progressPct > 0 ? `${Math.round(progressPct)}%` : '-'}
         </div>
