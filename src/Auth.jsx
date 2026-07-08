@@ -30,12 +30,14 @@ function Auth({ onLogin }) {
 
   const handleGoogleSuccess = async (credentialResponse) => {
     try {
-      const res = await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/google-login`, {
+      const baseUrl = (import.meta.env.VITE_API_URL || 'http://localhost:5000').replace(/\/$/, '');
+      const res = await axios.post(`${baseUrl}/api/google-login`, {
         credential: credentialResponse.credential
       });
       onLogin(res.data.token);
     } catch (err) {
-      alert(err.response?.data?.message || 'Gagal login dengan Google');
+      const errMsg = err.response?.data?.message || err.response?.data?.error || err.message || 'Error tidak diketahui';
+      alert('Gagal login dengan Google: ' + errMsg);
     }
   };
 
