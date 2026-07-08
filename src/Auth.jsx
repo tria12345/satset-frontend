@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import { GoogleLogin } from '@react-oauth/google';
 
 function Auth({ onLogin }) {
   const [isLogin, setIsLogin] = useState(true);
@@ -27,12 +28,39 @@ function Auth({ onLogin }) {
     }
   };
 
+  const handleGoogleSuccess = async (credentialResponse) => {
+    try {
+      const res = await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/google-login`, {
+        credential: credentialResponse.credential
+      });
+      onLogin(res.data.token);
+    } catch (err) {
+      alert(err.response?.data?.message || 'Gagal login dengan Google');
+    }
+  };
+
   return (
     <div className="app-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: 20 }}>
       <div className="card" style={{ width: '100%', maxWidth: 400 }}>
         <div style={{ textAlign: 'center', marginBottom: 24 }}>
           <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>SatSet Panel</h1>
           <p style={{ color: 'var(--text-secondary)', marginTop: 8 }}>{isLogin ? 'Masuk ke akun toko Anda' : 'Daftar akun toko baru'}</p>
+        </div>
+
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 20 }}>
+          <GoogleLogin
+            onSuccess={handleGoogleSuccess}
+            onError={() => {
+              alert('Login Failed');
+            }}
+            useOneTap
+            theme="filled_black"
+            text={isLogin ? 'signin_with' : 'signup_with'}
+          />
+        </div>
+
+        <div style={{ textAlign: 'center', color: 'var(--text-secondary)', marginBottom: 20, fontSize: 12 }}>
+          Atau gunakan email
         </div>
 
         <form onSubmit={handleSubmit}>
